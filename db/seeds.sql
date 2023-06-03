@@ -32,6 +32,6 @@ VALUES (1, "Robinson", "Santos", 1, null),
        (6, "Marry", "Taylor", 8, 1),
        (7, "Derik", "Johnson", 3, null),
        (8, "Paul", "Lee", 4, null),
-       (9, "Ben", "Thompson", 7, 5);
+       (9, "Ben", "Thompson", 7, null);
 
 

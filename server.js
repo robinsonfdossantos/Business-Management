@@ -10,7 +10,7 @@ const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
-// Create a MySQL connection
+// ******* Create a MySQL connection *********
 const db = mysql.createConnection(
   {
     host: 'localhost',
@@ -21,14 +21,14 @@ const db = mysql.createConnection(
   console.log(`Connected to the business_db database.`)
 );
 
-// Connect to the database
+// ******* Connect to the database ********
 db.connect((err) => {
   if (err) throw err;
   console.log('Connected to the business database');
   startApp();
 });
 
-// Function to start the application
+// ******* Function to start the application ********
 function startApp() {
   inquirer
     .prompt([
@@ -37,7 +37,7 @@ function startApp() {
         type: 'list',
         message: 'What would you like to do?',
         choices: [
-          'View All departments',
+          'View All Departments',
           'View All Roles',
           'View All Employees',
           'Add Department',
@@ -81,7 +81,7 @@ function startApp() {
     });
 }
 
-// Function to view all departments
+// ******* Function to view all departments ********
 function viewAllDepartments() {
   db.query('SELECT * FROM department', (err, res) => {
     if (err) throw err;
@@ -90,7 +90,7 @@ function viewAllDepartments() {
   });
 }
 
-// Function to view all roles
+// ******** Function to view all roles ********
 function viewAllRoles() {
   const query = `
     SELECT role.id, role.title, department.name AS department, role.salary
@@ -107,7 +107,7 @@ function viewAllRoles() {
 }
 
 
-// Function to view all employees
+// ******* Function to view all employees *******
 function viewAllEmployees() {
   const query = `
     SELECT employee.id, employee.first_name, employee.last_name, role.title AS role, department.name AS department, role.salary AS salary, 
@@ -116,6 +116,7 @@ function viewAllEmployees() {
     JOIN role ON employee.role_id = role.id
     JOIN department ON role.department_id = department.id
     LEFT JOIN employee AS manager ON employee.manager_id = manager.id
+    ORDER BY first_name
   `;
 
   db.query(query, (err, res) => {
@@ -125,7 +126,7 @@ function viewAllEmployees() {
   });
 }
 
-// Function to add a department
+// ****** Function to add a department *******
 function addDepartment() {
   inquirer
     .prompt([
@@ -148,7 +149,7 @@ function addDepartment() {
     });
 }
 
-// Function to add a role
+// ****** Function to add a role *******
 function addRole() {
   db.query('SELECT * FROM department', (err, departments) => {
     if (err) throw err;
@@ -189,12 +190,13 @@ function addRole() {
   });
 }
 
-// Function to add an employee
+
+// ****** Function to add an employee *******
 function addEmployee() {
   db.query('SELECT * FROM role', (err, roles) => {
     if (err) throw err;
 
-    db.query('SELECT * FROM employee', (err, employees) => {
+    db.query('SELECT * FROM employee WHERE role_id IN (SELECT id FROM role WHERE title = "Manager")', (err, managers) => {
       if (err) throw err;
 
       inquirer
@@ -223,9 +225,9 @@ function addEmployee() {
             type: 'list',
             message: "Select the employee's manager: ",
             choices: [
-              ...employees.map((employee) => ({
-                name: `${employee.first_name} ${employee.last_name}`,
-                value: employee.id,
+              ...managers.map((manager) => ({
+                name: `${manager.first_name} ${manager.last_name}`,
+                value: manager.id,
               })),
               {
                 name: 'null',
@@ -234,7 +236,6 @@ function addEmployee() {
             ],
           },
         ])
-        
         .then((answer) => {
           db.query(
             'INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)',
@@ -250,7 +251,10 @@ function addEmployee() {
   });
 }
 
-// Function to update an employee role
+
+
+
+// ****** Function to update an employee role ********
 function updateEmployeeRole() {
   db.query('SELECT * FROM employee', (err, employees) => {
     if (err) throw err;
