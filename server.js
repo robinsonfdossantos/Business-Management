@@ -83,6 +83,7 @@ function startApp() {
                 choices: [
                   'View Employees by Manager',
                   'View Employees by Department',
+                  'Update Employees Manager'
                 ]
               },
             ])
@@ -93,6 +94,9 @@ function startApp() {
                   break;
                 case 'View Employees by Department':
                   viewEmployeesByDepartment();
+                  break;
+                case 'Update Employees Manager':
+                  updateEmployeesManager();
                   break;
               }
             });
@@ -442,3 +446,57 @@ function updateEmployeeRole() {
     });
   });
 }
+
+
+// ****** Function to update an employee manager ********
+function updateEmployeesManager() {
+  db.query('SELECT * FROM employee', (err, employees) => {
+    if (err) throw err;
+    
+    db.query('SELECT * FROM employee WHERE role_id IN (SELECT id FROM role WHERE title = "Manager")', (err, managers) => {
+      if (err) throw err;
+
+      inquirer
+        .prompt([
+          {
+            name: 'employee_id',
+            type: 'list',
+            message: 'Select the employee to update: ',
+            choices: employees.map((employee) => ({
+              name: `${employee.first_name} ${employee.last_name}`,
+              value: employee.id,
+            })),
+          },
+          {
+            name: 'manager_id',
+            type: 'list',
+            message: "Select the employee's manager: ",
+            choices: [
+              ...managers.map((manager) => ({
+                name: `${manager.first_name} ${manager.last_name}`,
+                value: manager.id,
+              })),
+              {
+                name: 'null',
+                value: null,
+              },
+            ],
+          },
+        ])
+        .then((answer) => {
+          db.query(
+            'UPDATE employee SET manager_id = ? WHERE id = ?',
+            [answer.manager_id, answer.employee_id],
+            (err) => {
+              if (err) throw err;
+              console.log('Employee manager updated successfully!');
+              startApp();
+            }
+          );
+        });
+    });
+  });
+}
+
+
+
