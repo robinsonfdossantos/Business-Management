@@ -82,6 +82,7 @@ function startApp() {
                 type: 'list',
                 choices: [
                   'View Employees by Manager',
+                  'View Employees by Department',
                 ]
               },
             ])
@@ -89,6 +90,10 @@ function startApp() {
               switch (answer.action) {
                 case 'View Employees by Manager':
                   viewEmployeesByManager();
+                  break;
+                case 'View Employees by Department':
+                  viewEmployeesByDepartment();
+                  break;
               }
             });
           break;
@@ -108,7 +113,7 @@ function startApp() {
 function viewAllDepartments() {
   db.query(`SELECT department.id AS ID,
   department.name AS Department FROM department`, 
-  
+
   (err, res) => {
     if (err) throw err;
     console.table(res);
@@ -212,6 +217,57 @@ function viewEmployeesByManager() {
   });
 }
 
+
+// ***** Function to view employees by Department *******
+function viewEmployeesByDepartment() {
+  db.query('SELECT * FROM department', (err, departments) => {
+    if (err) throw err;
+
+    inquirer
+      .prompt([
+        {
+          name: 'department_id',
+          type: 'list',
+          message: "Select the employee's department: ",
+          choices: [
+            ...departments.map((department) => ({
+              name: `${department.name}`,
+              value: department.id,
+            })),
+            {
+              name: 'null',
+              value: null,
+            },
+          ],
+        },
+      ])
+
+      .then((answer) => {
+        db.query(
+          `
+          SELECT employee.id AS ID,
+          employee.first_name AS First_Name,
+          employee.last_name AS Last_Name, 
+          role.title AS Role,
+          department.name AS Department,
+          role.salary AS Salary, 
+          CONCAT(manager.first_name, ' ', manager.last_name) AS Manager
+          FROM employee
+          JOIN role ON employee.role_id = role.id
+          JOIN department ON role.department_id = department.id
+          LEFT JOIN employee AS manager ON employee.manager_id = manager.id
+          WHERE department.id = ?
+          `,
+          [answer.department_id],
+          (err, res) => {
+            if (err) throw err;
+            console.table(res);
+            startApp();
+          }
+        );
+      });
+  });
+}
 
 
 
