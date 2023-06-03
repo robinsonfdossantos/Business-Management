@@ -28,6 +28,13 @@ db.connect((err) => {
   startApp();
 });
 
+// **** Colors to style the terminal ******
+const yellow = '\x1b[33m%s\x1b[0m';
+const blue = '\x1b[34m%s\x1b[0m';
+const green = '\x1b[32m%s\x1b[0m';
+const red = '\x1b[31m%s\x1b[0m';
+
+
 // ******* Function to start the application ********
 function startApp() {
   inquirer
@@ -44,7 +51,8 @@ function startApp() {
           'Add Role',
           'Add Employee',
           'Update Employee Role',
-          'Other Filter Options',
+          'Further Options',
+          'Clear',
           'Exit',
         ],
       },
@@ -74,7 +82,7 @@ function startApp() {
           break;
 
 
-        case 'Other Filter Options':
+        case 'Further Options':
           inquirer
             .prompt([
               {
@@ -83,7 +91,10 @@ function startApp() {
                 choices: [
                   'View Employees by Manager',
                   'View Employees by Department',
-                  'Update Employees Manager'
+                  'Update Employees Manager',
+                  'Delete Employee',
+                  'Delete Department',
+                  'Return'
                 ]
               },
             ])
@@ -98,11 +109,24 @@ function startApp() {
                 case 'Update Employees Manager':
                   updateEmployeesManager();
                   break;
+                case 'Delete Employee':
+                  deleteEmployee();
+                  break;
+                case 'Delete Department':
+                  deleteDepartment();
+                  break;
+                case 'Return':
+                  console.log('\n\n\n');
+                  startApp();
+                  break;
               }
             });
           break;
 
-
+        case 'Clear':
+          console.clear();
+          startApp();
+          break;
         case 'Exit':
           db.end();
           break;
@@ -113,16 +137,23 @@ function startApp() {
     });
 }
 
+
+/*
+---------------------------------------------------
+----------------- VIEW FUNCTIONS ------------------
+---------------------------------------------------
+*/
+
 // ******* Function to view all departments ********
 function viewAllDepartments() {
   db.query(`SELECT department.id AS ID,
-  department.name AS Department FROM department`, 
+  department.name AS Department FROM department`,
 
-  (err, res) => {
-    if (err) throw err;
-    console.table(res);
-    startApp();
-  });
+    (err, res) => {
+      if (err) throw err;
+      console.table(res);
+      startApp();
+    });
 }
 
 // ******** Function to view all roles ********
@@ -275,6 +306,13 @@ function viewEmployeesByDepartment() {
 
 
 
+/*
+---------------------------------------------------
+----------------- ADD FUNCTIONS -------------------
+---------------------------------------------------
+*/
+
+
 // ****** Function to add a department *******
 function addDepartment() {
   inquirer
@@ -291,7 +329,7 @@ function addDepartment() {
         [answer.name],
         (err) => {
           if (err) throw err;
-          console.log('Department added successfully!');
+          console.log(green, `\n${answer.name} department added successfully!\n`);
           startApp();
         }
       );
@@ -331,7 +369,7 @@ function addRole() {
           [answer.title, answer.salary, answer.department_id],
           (err) => {
             if (err) throw err;
-            console.log('Role added successfully!');
+            console.log(green, `\n ${answer.title} role added successfully!\n`);
             startApp();
           }
         );
@@ -391,7 +429,7 @@ function addEmployee() {
             [answer.first_name, answer.last_name, answer.role_id, answer.manager_id],
             (err) => {
               if (err) throw err;
-              console.log('Employee added successfully!');
+              console.log(green, `\n ${answer.first_name} ${answer.last_name} added successfully!\n`);
               startApp();
             }
           );
@@ -401,6 +439,12 @@ function addEmployee() {
 }
 
 
+
+/*
+-----------------------------------------------------
+----------------- UPDATE FUNCTIONS ------------------
+-----------------------------------------------------
+*/
 
 
 // ****** Function to update an employee role ********
@@ -438,7 +482,7 @@ function updateEmployeeRole() {
             [answer.role_id, answer.employee_id],
             (err) => {
               if (err) throw err;
-              console.log('Employee role updated successfully!');
+              console.log(yellow, '\nEmployee role updated successfully!\n');
               startApp();
             }
           );
@@ -452,7 +496,7 @@ function updateEmployeeRole() {
 function updateEmployeesManager() {
   db.query('SELECT * FROM employee', (err, employees) => {
     if (err) throw err;
-    
+
     db.query('SELECT * FROM employee WHERE role_id IN (SELECT id FROM role WHERE title = "Manager")', (err, managers) => {
       if (err) throw err;
 
@@ -489,7 +533,7 @@ function updateEmployeesManager() {
             [answer.manager_id, answer.employee_id],
             (err) => {
               if (err) throw err;
-              console.log('Employee manager updated successfully!');
+              console.log(yellow, '\nEmployee manager updated successfully!\n');
               startApp();
             }
           );
@@ -499,4 +543,97 @@ function updateEmployeesManager() {
 }
 
 
+
+/*
+-----------------------------------------------------
+----------------- DELETE FUNCTIONS ------------------
+-----------------------------------------------------
+*/
+
+
+// ****** Function to delete an employee *******
+function deleteEmployee() {
+  db.query('SELECT * FROM employee', (err, employees) => {
+    if (err) throw err;
+
+    inquirer
+      .prompt([
+        {
+          name: 'employee_id',
+          type: 'list',
+          message: 'Select the employee to delete: ',
+          choices: employees.map((employee) => ({
+            name: `${employee.first_name} ${employee.last_name}`,
+            value: employee.id,
+          })),
+        },
+      ])
+
+      .then((answer) => {
+        db.query(
+          'DELETE FROM employee WHERE id = ?',
+          [answer.employee_id],
+          (err) => {
+            if (err) throw err;
+            console.log(red, `\nEmployee deleted!\n`);
+            startApp();
+          }
+        );
+      });
+  });
+}
+
+
+// ****** Function to delete a department *******
+function deleteDepartment() {
+  db.query('SELECT * FROM department', (err, departments) => {
+    if (err) throw err;
+
+    inquirer
+      .prompt([
+        {
+          name: 'department_id',
+          type: 'list',
+          message: 'Select the department to delete: ',
+          choices: departments.map((department) => ({
+            name: `${department.name}`,
+            value: department.id,
+          })),
+        },
+      ])
+      .then((answer) => {
+        const departmentId = answer.department_id;
+
+        // Update employees
+        db.query(
+          'UPDATE employee SET role_id = NULL WHERE role_id = ?',
+          [departmentId],
+          (err) => {
+            if (err) throw err;
+
+        // Update roles
+        db.query(
+          'UPDATE role SET department_id = NULL WHERE department_id = ?',
+          [departmentId],
+          (err) => {
+            if (err) throw err;
+
+                // Delete the department
+                db.query(
+                  'DELETE FROM department WHERE id = ?',
+                  [departmentId],
+                  (err) => {
+                    if (err) throw err;
+
+                    console.log(red, '\nDepartment deleted!\n');
+                    startApp();
+                  }
+                );
+              }
+            );
+          }
+        );
+      });
+  });
+}
 
