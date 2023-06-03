@@ -44,6 +44,7 @@ function startApp() {
           'Add Role',
           'Add Employee',
           'Update Employee Role',
+          'Other Filter Options',
           'Exit',
         ],
       },
@@ -71,6 +72,28 @@ function startApp() {
         case 'Update Employee Role':
           updateEmployeeRole();
           break;
+
+
+        case 'Other Filter Options':
+          inquirer
+            .prompt([
+              {
+                name: 'action',
+                type: 'list',
+                choices: [
+                  'View Employees by Manager',
+                ]
+              },
+            ])
+            .then((answer) => {
+              switch (answer.action) {
+                case 'View Employees by Manager':
+                  viewEmployeesByManager();
+              }
+            });
+          break;
+
+
         case 'Exit':
           db.end();
           break;
@@ -83,7 +106,10 @@ function startApp() {
 
 // ******* Function to view all departments ********
 function viewAllDepartments() {
-  db.query('SELECT * FROM department', (err, res) => {
+  db.query(`SELECT department.id AS ID,
+  department.name AS Department FROM department`, 
+  
+  (err, res) => {
     if (err) throw err;
     console.table(res);
     startApp();
@@ -93,7 +119,10 @@ function viewAllDepartments() {
 // ******** Function to view all roles ********
 function viewAllRoles() {
   const query = `
-    SELECT role.id, role.title, department.name AS department, role.salary
+    SELECT role.id AS ID,
+    role.title AS Title,
+    department.name AS Department,
+    role.salary AS Salary
     FROM role
     JOIN department ON role.department_id = department.id
     ORDER BY id
@@ -110,8 +139,13 @@ function viewAllRoles() {
 // ******* Function to view all employees *******
 function viewAllEmployees() {
   const query = `
-    SELECT employee.id, employee.first_name, employee.last_name, role.title AS role, department.name AS department, role.salary AS salary, 
-    CONCAT(manager.first_name, ' ', manager.last_name) AS manager
+    SELECT employee.id AS ID,
+    employee.first_name AS First_Name,
+    employee.last_name AS Last_Name, 
+    role.title AS Role,
+    department.name AS Department,
+    role.salary AS Salary, 
+    CONCAT(manager.first_name, ' ', manager.last_name) AS Manager
     FROM employee
     JOIN role ON employee.role_id = role.id
     JOIN department ON role.department_id = department.id
@@ -125,6 +159,61 @@ function viewAllEmployees() {
     startApp();
   });
 }
+
+
+// ****** Function to view employees by Manager *******
+function viewEmployeesByManager() {
+  db.query('SELECT * FROM employee WHERE role_id IN (SELECT id FROM role WHERE title = "Manager")', (err, managers) => {
+    if (err) throw err;
+
+    inquirer
+      .prompt([
+        {
+          name: 'manager_id',
+          type: 'list',
+          message: "Select the employee's manager: ",
+          choices: [
+            ...managers.map((manager) => ({
+              name: `${manager.first_name} ${manager.last_name}`,
+              value: manager.id,
+            })),
+            {
+              name: 'null',
+              value: null,
+            },
+          ],
+        },
+      ])
+
+      .then((answer) => {
+        db.query(
+          `
+          SELECT employee.id AS ID,
+          employee.first_name AS First_Name,
+          employee.last_name AS Last_Name, 
+          role.title AS Role,
+          department.name AS Department,
+          role.salary AS Salary, 
+          CONCAT(manager.first_name, ' ', manager.last_name) AS Manager
+          FROM employee
+          JOIN role ON employee.role_id = role.id
+          JOIN department ON role.department_id = department.id
+          LEFT JOIN employee AS manager ON employee.manager_id = manager.id
+          WHERE employee.manager_id = ?
+          `,
+          [answer.manager_id],
+          (err, res) => {
+            if (err) throw err;
+            console.table(res);
+            startApp();
+          }
+        );
+      });
+  });
+}
+
+
+
 
 // ****** Function to add a department *******
 function addDepartment() {
