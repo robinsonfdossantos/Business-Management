@@ -610,7 +610,7 @@ function deleteDepartment() {
         // Update role
         db.query(
           'UPDATE role SET department_id = ? WHERE department_id = ?',
-          [null, answer.department_id],
+          [1000, answer.department_id], //defined in seeds.sql
           (err) => {
             if (err) throw err;
 
@@ -655,7 +655,7 @@ function deleteRole() {
         
         db.query(
           'UPDATE employee SET role_id = ? WHERE role_id = ?',
-          [null, answer.role_id],
+          [1001, answer.role_id], //1001 defined in seeds.sql
           (err) => {
             if (err) throw err;
 
