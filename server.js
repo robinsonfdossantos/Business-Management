@@ -94,6 +94,7 @@ function startApp() {
                   'Update Employees Manager',
                   'Delete Employee',
                   'Delete Department',
+                  'Delete Role',
                   'Return'
                 ]
               },
@@ -114,6 +115,9 @@ function startApp() {
                   break;
                 case 'Delete Department':
                   deleteDepartment();
+                  break;
+                case 'Delete Role':
+                  deleteRole();
                   break;
                 case 'Return':
                   console.log('\n\n\n');
@@ -583,7 +587,7 @@ function deleteEmployee() {
   });
 }
 
-
+// NOT WORKING PROPERLY YET
 // ****** Function to delete a department *******
 function deleteDepartment() {
   db.query('SELECT * FROM department', (err, departments) => {
@@ -602,33 +606,22 @@ function deleteDepartment() {
         },
       ])
       .then((answer) => {
-        const departmentId = answer.department_id;
 
-        // Update employees
+        // Update role
         db.query(
-          'UPDATE employee SET role_id = NULL WHERE role_id = ?',
-          [departmentId],
+          'UPDATE role SET department_id = ? WHERE department_id = ?',
+          [null, answer.department_id],
           (err) => {
             if (err) throw err;
 
-        // Update roles
-        db.query(
-          'UPDATE role SET department_id = NULL WHERE department_id = ?',
-          [departmentId],
-          (err) => {
-            if (err) throw err;
-
-                // Delete the department
-                db.query(
-                  'DELETE FROM department WHERE id = ?',
-                  [departmentId],
-                  (err) => {
-                    if (err) throw err;
-
-                    console.log(red, '\nDepartment deleted!\n');
-                    startApp();
-                  }
-                );
+            // Delete department
+            db.query(
+              'DELETE FROM department WHERE id = ?',
+              [answer.department_id],
+              (err) => {
+                if (err) throw err;
+                console.log(red, '\nDepartment deleted!\n');
+                startApp();
               }
             );
           }
@@ -636,4 +629,51 @@ function deleteDepartment() {
       });
   });
 }
+
+
+
+// NOT WORKING PROPERLY YET
+// ****** Function to delete a role *******
+function deleteRole() {
+  db.query('SELECT * FROM role', (err, roles) => {
+    if (err) throw err;
+
+    inquirer
+      .prompt([
+        {
+          name: 'role_id',
+          type: 'list',
+          message: 'Select the role to delete: ',
+          choices: roles.map((role) => ({
+            name: `${role.title}`,
+            value: role.id,
+          })),
+        },
+      ])
+      .then((answer) => {
+        // Update employees
+        
+        db.query(
+          'UPDATE employee SET role_id = ? WHERE role_id = ?',
+          [null, answer.role_id],
+          (err) => {
+            if (err) throw err;
+
+            // Delete the role
+            db.query(
+              'DELETE FROM role WHERE id = ?',
+              [answer.role_id],
+              (err) => {
+                if (err) throw err;
+                console.log(red, '\nRole deleted!\n');
+                startApp();
+              }
+            );
+          }
+        );
+      });
+  });
+}
+
+
 
