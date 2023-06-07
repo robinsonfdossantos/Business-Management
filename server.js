@@ -3,7 +3,6 @@ const mysql = require('mysql2');
 const inquirer = require('inquirer');
 const express = require('express');
 
-
 const PORT = process.env.PORT || 3001;
 const app = express();
 
@@ -51,7 +50,7 @@ function startApp() {
           'Add Role',
           'Add Employee',
           'Update Employee Role',
-          'Further Options',
+          '** Further Options **',
           'Clear',
           'Exit',
         ],
@@ -82,7 +81,7 @@ function startApp() {
           break;
 
 
-        case 'Further Options':
+        case '** Further Options **':
           inquirer
             .prompt([
               {
@@ -95,6 +94,7 @@ function startApp() {
                   'Delete Employee',
                   'Delete Department',
                   'Delete Role',
+                  'Consult Department Salary',
                   'Return'
                 ]
               },
@@ -118,6 +118,9 @@ function startApp() {
                   break;
                 case 'Delete Role':
                   deleteRole();
+                  break;
+                 case 'Consult Department Salary': 
+                  departmentSalary();
                   break;
                 case 'Return':
                   console.log('\n\n\n');
@@ -676,4 +679,43 @@ function deleteRole() {
 }
 
 
+/*
+-----------------------------------------------------
+----------------- CONSULT FUNCTIONS -----------------
+-----------------------------------------------------
+*/
 
+
+// Lesson 24 to develop the function for SUM
+// ****** Function to SUM salary of employees in the department *******
+function departmentSalary() {
+  db.query('SELECT * FROM department', (err, departments) => {
+    if (err) throw err;
+
+    inquirer
+      .prompt([
+        {
+          name: 'department_id',
+          type: 'list',
+          message: 'Select the department to consult: ',
+          choices: departments.map((department) => ({
+            name: `${department.name}`,
+            value: department.id,
+          })),
+        },
+      ])
+      .then((answer) => {
+        // Consult employee by role_id then join to department_id
+        db.query(
+          `SELECT SUM(role.salary) AS Combined_Salary_Department FROM role 
+          INNER JOIN employee ON role.id = employee.role_id WHERE role.department_id = ?`,
+          [answer.department_id],
+          (err, res) => {
+            if (err) throw err;
+            console.table(res);
+            startApp();
+          }
+        );
+      });
+  });
+}
