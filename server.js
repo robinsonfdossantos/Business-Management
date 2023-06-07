@@ -2,6 +2,7 @@
 const mysql = require('mysql2');
 const inquirer = require('inquirer');
 const express = require('express');
+require('dotenv').config()
 
 const PORT = process.env.PORT || 3001;
 const app = express();
@@ -13,8 +14,8 @@ app.use(express.json());
 const db = mysql.createConnection(
   {
     host: 'localhost',
-    user: 'root',
-    password: 'Mysql0421!',
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
     database: 'business_db'
   },
   console.log(`Connected to the business_db database.`)
@@ -194,8 +195,8 @@ function viewAllEmployees() {
     role.salary AS Salary, 
     CONCAT(manager.first_name, ' ', manager.last_name) AS Manager
     FROM employee
-    JOIN role ON employee.role_id = role.id
-    JOIN department ON role.department_id = department.id
+    LEFT JOIN role ON employee.role_id = role.id
+    LEFT JOIN department ON role.department_id = department.id
     LEFT JOIN employee AS manager ON employee.manager_id = manager.id
     ORDER BY first_name
   `;
@@ -459,7 +460,9 @@ function updateEmployeeRole() {
   db.query('SELECT * FROM employee', (err, employees) => {
     if (err) throw err;
 
-    db.query('SELECT * FROM role', (err, roles) => {
+    db.query(`Select CONCAT(role.title, " (", department.name, ") ") as name,  
+      role.id as value FROM role
+      JOIN department ON role.department_id = department.id;`, (err, roles) => {
       if (err) throw err;
 
       inquirer
@@ -477,10 +480,7 @@ function updateEmployeeRole() {
             name: 'role_id',
             type: 'list',
             message: 'Select the new role for the employee: ',
-            choices: roles.map((role) => ({
-              name: role.title,
-              value: role.id,
-            })),
+            choices: roles,
           },
         ])
         .then((answer) => {
@@ -613,7 +613,7 @@ function deleteDepartment() {
         // Update role
         db.query(
           'UPDATE role SET department_id = ? WHERE department_id = ?',
-          [1000, answer.department_id], //defined in seeds.sql
+          [null, answer.department_id], //defined in seeds.sql
           (err) => {
             if (err) throw err;
 
@@ -658,7 +658,7 @@ function deleteRole() {
         
         db.query(
           'UPDATE employee SET role_id = ? WHERE role_id = ?',
-          [1001, answer.role_id], //1001 defined in seeds.sql
+          [null, answer.role_id], //1001 defined in seeds.sql
           (err) => {
             if (err) throw err;
 

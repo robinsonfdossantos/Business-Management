@@ -6,8 +6,8 @@ VALUES (1, "IT"),
        (5, "Engineering"),
        (6, "Human Resources"),
        (7, "Research & Development"),
-       (8, "Administration"),
-       (1000, 'Not definied');
+       (8, "Administration");
+       --(1000, 'Not definied');
 
 
 
@@ -20,8 +20,8 @@ VALUES (1, "Manager", 150000, 1),
        (6, "Secretary", 80000, 8),
        (7, "Accountant", 90000, 3),
        (8, "Graphic Designer", 100000, 4),
-       (9, "Outcomes Researcher", 120000, 7),
-       (1001, "Not definied", null, 1000);
+       (9, "Outcomes Researcher", 120000, 7);
+       --(1001, "Not definied", null, 1000);
 
 
 
