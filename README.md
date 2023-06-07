@@ -42,7 +42,7 @@ This project was developed to help entrepreneurs manage their employees and cons
 
   The following link is related to a video of the application in operation, watching it you will be able to go through the options provided by the application and also follow the steps to start the application if you still have doubts.
 
-  ADD LINK OF THE VIDEO HERE
+  https://drive.google.com/file/d/1-S6G0ldEfinHyFGN--7Aw3AyGptzSTnM/view
 
   ## License
 
