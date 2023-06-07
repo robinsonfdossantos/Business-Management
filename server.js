@@ -707,8 +707,12 @@ function departmentSalary() {
       .then((answer) => {
         // Consult employee by role_id then join to department_id
         db.query(
-          `SELECT SUM(role.salary) AS Combined_Salary_Department FROM role 
-          INNER JOIN employee ON role.id = employee.role_id WHERE role.department_id = ?`,
+          `SELECT department.name AS Department,
+          SUM(role.salary) AS Combined_Salary_Department
+          FROM department
+          INNER JOIN role ON department.id = role.department_id
+          INNER JOIN employee ON role.id = employee.role_id
+          WHERE role.department_id = ?`,
           [answer.department_id],
           (err, res) => {
             if (err) throw err;
