@@ -719,3 +719,4 @@ function departmentSalary() {
       });
   });
 }
+
